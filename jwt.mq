@@ -1,0 +1,53 @@
+# JWT decoder implemented in mq
+# Decodes header and payload without signature verification.
+# https://jwt.io/introduction
+
+# ─── internal ─────────────────────────────────────────────────────────────────
+
+def _jwt_pad(s):
+  let r = len(s) % 4
+  | if (r == 0): s
+    elif (r == 2): s + "=="
+    elif (r == 3): s + "="
+    else: s
+end
+
+def _jwt_decode_part(part):
+  let padded = _jwt_pad(replace(replace(part, "-", "+"), "_", "/"))
+  | json_parse(base64d(padded))
+end
+
+# ─── public API ───────────────────────────────────────────────────────────────
+
+# Decodes a JWT token and returns { header, payload, signature }.
+# Does NOT verify the signature.
+def jwt_decode(token):
+  let parts = split(to_string(token), "\\.")
+  | if (len(parts) < 2):
+      error("jwt: invalid token format")
+    else:
+      do
+        let header    = _jwt_decode_part(parts[0])
+        | let payload = _jwt_decode_part(parts[1])
+        | let sig     = if (len(parts) >= 3): parts[2] else: ""
+        | {"header": header, "payload": payload, "signature": sig}
+      end
+end
+
+# Returns only the payload claims dict.
+def jwt_payload(token):
+  jwt_decode(token)["payload"]
+end
+
+# Returns only the header dict.
+def jwt_header(token):
+  jwt_decode(token)["header"]
+end
+
+# Returns true if the "exp" claim is in the past (token is expired).
+# Requires the caller to supply the current Unix timestamp.
+def jwt_expired(token, now):
+  let p = jwt_payload(token)
+  | if (is_none(p["exp"])): false
+    else: to_number(p["exp"]) < now
+end
