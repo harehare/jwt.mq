@@ -1,0 +1,122 @@
+include "test"
+| include "jwt"
+|
+
+# Standard test token:
+# header:  {"alg":"HS256","typ":"JWT"}
+# payload: {"sub":"1234567890","name":"John Doe","iat":1516239022}
+def _test_token():
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
+end
+
+# Token with exp claim (exp=1700000000, already expired):
+# header:  {"alg":"HS256","typ":"JWT"}
+# payload: {"sub":"user1","exp":1700000000}
+def _test_expiring_token():
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VyMSIsImV4cCI6MTcwMDAwMDAwMH0.placeholder"
+end
+
+# -- jwt_decode --
+
+def test_decode_returns_header():
+  let result = jwt_decode(_test_token())
+  | assert_not_none(result["header"])
+end
+
+def test_decode_returns_payload():
+  let result = jwt_decode(_test_token())
+  | assert_not_none(result["payload"])
+end
+
+def test_decode_returns_signature():
+  let result = jwt_decode(_test_token())
+  | assert_not_none(result["signature"])
+end
+
+def test_decode_header_alg():
+  let result = jwt_decode(_test_token())
+  | assert_eq(result["header"]["alg"], "HS256")
+end
+
+def test_decode_header_typ():
+  let result = jwt_decode(_test_token())
+  | assert_eq(result["header"]["typ"], "JWT")
+end
+
+def test_decode_payload_sub():
+  let result = jwt_decode(_test_token())
+  | assert_eq(result["payload"]["sub"], "1234567890")
+end
+
+def test_decode_payload_name():
+  let result = jwt_decode(_test_token())
+  | assert_eq(result["payload"]["name"], "John Doe")
+end
+
+def test_decode_payload_iat():
+  let result = jwt_decode(_test_token())
+  | assert_eq(result["payload"]["iat"], 1516239022)
+end
+
+# -- jwt_header --
+
+def test_header_alg():
+  let result = jwt_header(_test_token())
+  | assert_eq(result["alg"], "HS256")
+end
+
+def test_header_typ():
+  let result = jwt_header(_test_token())
+  | assert_eq(result["typ"], "JWT")
+end
+
+# -- jwt_payload --
+
+def test_payload_sub():
+  let result = jwt_payload(_test_token())
+  | assert_eq(result["sub"], "1234567890")
+end
+
+def test_payload_name():
+  let result = jwt_payload(_test_token())
+  | assert_eq(result["name"], "John Doe")
+end
+
+def test_payload_iat():
+  let result = jwt_payload(_test_token())
+  | assert_eq(result["iat"], 1516239022)
+end
+
+# -- jwt_expired --
+
+def test_not_expired_when_now_is_before_exp():
+  let result = jwt_expired(_test_expiring_token(), 1699999999)
+  | assert_false(result)
+end
+
+def test_expired_when_now_is_after_exp():
+  let result = jwt_expired(_test_expiring_token(), 1700000001)
+  | assert_true(result)
+end
+
+def test_not_expired_when_no_exp_claim():
+  let result = jwt_expired(_test_token(), 9999999999)
+  | assert_false(result)
+end
+
+# -- _jwt_pad --
+
+def test_pad_no_padding_needed():
+  let result = _jwt_pad("abcd")
+  | assert_eq(result, "abcd")
+end
+
+def test_pad_two_equals():
+  let result = _jwt_pad("ab")
+  | assert_eq(result, "ab==")
+end
+
+def test_pad_one_equals():
+  let result = _jwt_pad("abc")
+  | assert_eq(result, "abc=")
+end
