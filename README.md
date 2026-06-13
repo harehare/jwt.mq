@@ -54,10 +54,7 @@ echo "$TOKEN" | mq -I raw 'import "jwt" | jwt::jwt_expired(., 1700000000)'
 # => true
 ```
 
-## Compatibility
-
-Requires [mq](https://github.com/harehare/mq) v0.5 or later.
-
 ## License
 
 MIT
+

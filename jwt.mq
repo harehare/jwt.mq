@@ -14,7 +14,7 @@ end
 
 def _jwt_decode_part(part):
   let padded = _jwt_pad(replace(replace(part, "-", "+"), "_", "/"))
-  | json_parse(base64d(padded))
+  | _json_parse(base64d(padded))
 end
 
 # ─── public API ───────────────────────────────────────────────────────────────
