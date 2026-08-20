@@ -17,10 +17,18 @@ A JWT decoder implemented as an [mq](https://github.com/harehare/mq) module.
 cp jwt.mq ~/.local/mq/config/
 ```
 
-### HTTP Import
+### HTTP Import (no local installation needed)
+
+If `mq` was built with the `http-import` feature, you can import directly from GitHub without any local setup. This requires the `--allow-http-import` flag, which is disabled by default:
 
 ```sh
-mq -I raw 'import "github.com/harehare/jwt.mq" | jwt::jwt_decode(.)' token.txt
+mq --allow-http-import -I raw 'import "github.com/harehare/jwt.mq" | jwt::jwt_decode(.)' token.txt
+```
+
+Pin to a specific release with `@vX.Y.Z`:
+
+```sh
+mq --allow-http-import -I raw 'import "github.com/harehare/jwt.mq@v1.0.0" | jwt::jwt_decode(.)' token.txt
 ```
 
 ## API
